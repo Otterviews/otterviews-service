@@ -20,4 +20,10 @@ package object actors {
 
   case class AddClient(out: Enumerator[String])
 
+  object Runnable {
+    def apply(execute: () => Unit): Runnable = new Runnable() {
+      override def run(): Unit = execute()
+    }
+  }
+
 }

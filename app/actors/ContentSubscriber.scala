@@ -13,17 +13,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package actors
 
 import akka.actor.Props
 import akka.stream.actor.{ ActorSubscriber, ActorSubscriberMessage, WatermarkRequestStrategy }
-import messages.AddClient
 import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Enumerator
-
-object ContentSubscriber {
-  val ref = Akka.system.actorOf(Props(new ContentSubscriber(10)))
-}
+import play.api.Play.current
 
 class ContentSubscriber(limit: Int) extends ActorSubscriber {
 
@@ -34,15 +31,24 @@ class ContentSubscriber(limit: Int) extends ActorSubscriber {
 
   override def receive: Receive = {
     case ActorSubscriberMessage.OnNext(message) => message match {
-      case Some(msg) if msg.isInstanceOf[String] =>
-        val content: String = msg.asInstanceOf[String]
-        outs.foreach(_ >>> Enumerator(content))
-        cached ++= Seq(content)
-      case None => unhandled()
+      case Some(msg) => broadcastAndCache(msg.asInstanceOf[String])
+      case None      => unhandled(message)
     }
-    case AddClient(e) =>
-      e >>> Enumerator(cached: _*)
-      outs ++= Seq(e)
+    case AddClient(e) => addAndFlush(e)
   }
 
+  private[this] def addAndFlush(e: Enumerator[String]) {
+    e >>> Enumerator(cached: _*)
+    outs ++= Seq(e)
+  }
+
+  private[this] def broadcastAndCache(content: String) {
+    outs.foreach(_ >>> Enumerator(content))
+    cached ++= Seq(content)
+  }
 }
+
+object ContentSubscriber {
+  val ref = Akka.system.actorOf(Props(new ContentSubscriber(10)))
+}
+

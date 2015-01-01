@@ -13,15 +13,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package controllers
 
-import actors.{ AddClient, ContentSubscriber }
+import actors.{ AddClient, ContentPublisher, ContentSubscriber }
 import akka.actor._
+import akka.stream.actor.{ ActorPublisher, ActorSubscriber }
+import akka.stream.scaladsl.{ Flow, PublisherSource, SubscriberSink }
+import akka.stream.{ FlowMaterializer, MaterializerSettings }
+import com.typesafe.config.ConfigFactory
+import play.api.Play
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.{ Enumerator, _ }
 import play.api.libs.json.Json
 import play.api.mvc._
 
 object Application extends Controller {
+
+  implicit val system = Akka.system(Play.current)
+
+  Flow.empty[String].runWith(
+    PublisherSource(ActorPublisher[String](ContentPublisher.ref)),
+    SubscriberSink(ActorSubscriber[String](ContentSubscriber.ref))
+  )(FlowMaterializer(MaterializerSettings(ConfigFactory.load())))
 
   def content: WebSocket[String, String] = WebSocket.using[String] { request =>
     val out = Enumerator.empty[String]

@@ -13,6 +13,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package actors
 
 import java.util.concurrent.TimeUnit
@@ -20,35 +21,34 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ Cancellable, Props }
 import akka.stream.actor.{ ActorPublisher, ActorPublisherMessage }
 import play.api.libs.concurrent.Akka
+import play.api.Play.current
 
 import scala.concurrent.duration.FiniteDuration
-
-object ContentPublisher {
-  val ref = Akka.system.actorOf(Props(new ContentPublisher(100)))
-}
 
 class ContentPublisher(interval: Int) extends ActorPublisher[String] {
 
   var schedule: Option[Cancellable] = None
 
-  override def preStart(): Unit = {
-
-    schedule = Some(context.system.scheduler.schedule(
-      FiniteDuration(interval, TimeUnit.SECONDS),
-      FiniteDuration(interval, TimeUnit.SECONDS),
-      new Runnable {
-        override def run(): Unit = {
-          retrieveContent.foreach(onNext)
-        }
-      }
-    ))
-  }
-
-  override def postStop(): Unit = schedule.foreach(_.cancel())
-
   override def receive: Receive = {
     case ActorPublisherMessage.Cancel => schedule.foreach(_.cancel())
   }
 
-  private def retrieveContent: Seq[String] = ???
+  override def preStart(): Unit = {
+    implicit val dispatcher = Akka.system.dispatcher
+    schedule = Some(
+      context.system.scheduler.schedule(delay, delay, Runnable(dispatchContent))
+    )
+  }
+
+  override def postStop(): Unit = schedule.foreach(_.cancel())
+
+  private[this] def dispatchContent() = retrieveContent.foreach(onNext)
+
+  private[this] def delay = FiniteDuration(interval, TimeUnit.SECONDS)
+
+  private[this] def retrieveContent: Seq[String] = ???
+}
+
+object ContentPublisher {
+  val ref = Akka.system.actorOf(Props(new ContentPublisher(100)))
 }

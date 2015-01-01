@@ -14,17 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import actors.{ ContentPublisher, ContentSubscriber }
-import akka.stream.actor.{ ActorPublisher, ActorSubscriber }
-import akka.stream.scaladsl.{ Flow, PublisherSource, SubscriberSink }
-import play.api.{ Application, GlobalSettings }
+import play.api.GlobalSettings
 
 object Global extends GlobalSettings {
-
-  override def onStart(app: Application): Unit =
-    Flow.empty[String].runWith(
-      PublisherSource(ActorPublisher[String](ContentPublisher.ref)),
-      SubscriberSink(ActorSubscriber[String](ContentSubscriber.ref))
-    )
 
 }
