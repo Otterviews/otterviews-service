@@ -18,9 +18,8 @@ package actors
 
 import akka.actor.Props
 import akka.stream.actor.{ ActorSubscriber, ActorSubscriberMessage, WatermarkRequestStrategy }
-import play.api.libs.concurrent.Akka
+import controllers.Application
 import play.api.libs.iteratee.Enumerator
-import play.api.Play.current
 
 class ContentSubscriber(limit: Int) extends ActorSubscriber {
 
@@ -30,11 +29,8 @@ class ContentSubscriber(limit: Int) extends ActorSubscriber {
   override val requestStrategy = WatermarkRequestStrategy(limit)
 
   override def receive: Receive = {
-    case ActorSubscriberMessage.OnNext(message) => message match {
-      case Some(msg) => broadcastAndCache(msg.asInstanceOf[String])
-      case None      => unhandled(message)
-    }
-    case AddClient(e) => addAndFlush(e)
+    case ActorSubscriberMessage.OnNext(message) => broadcastAndCache(message.toString)
+    case AddClient(e)                           => addAndFlush(e)
   }
 
   private[this] def addAndFlush(e: Enumerator[String]) {
@@ -49,6 +45,6 @@ class ContentSubscriber(limit: Int) extends ActorSubscriber {
 }
 
 object ContentSubscriber {
-  val ref = Akka.system.actorOf(Props(new ContentSubscriber(10)))
+  val ref = Application.system.actorOf(Props(new ContentSubscriber(10)))
 }
 

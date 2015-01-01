@@ -22,20 +22,19 @@ import akka.stream.actor.{ ActorPublisher, ActorSubscriber }
 import akka.stream.scaladsl.{ Flow, PublisherSource, SubscriberSink }
 import akka.stream.{ FlowMaterializer, MaterializerSettings }
 import com.typesafe.config.ConfigFactory
-import play.api.Play
-import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.{ Enumerator, _ }
 import play.api.libs.json.Json
 import play.api.mvc._
 
 object Application extends Controller {
 
-  implicit val system = Akka.system(Play.current)
+  implicit val system = ActorSystem("content-system", ConfigFactory.load("content-system.conf"))
+  implicit val materializer = FlowMaterializer(MaterializerSettings(system))
 
   Flow.empty[String].runWith(
     PublisherSource(ActorPublisher[String](ContentPublisher.ref)),
     SubscriberSink(ActorSubscriber[String](ContentSubscriber.ref))
-  )(FlowMaterializer(MaterializerSettings(ConfigFactory.load())))
+  )
 
   def content: WebSocket[String, String] = WebSocket.using[String] { request =>
     val out = Enumerator.empty[String]

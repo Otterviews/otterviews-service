@@ -20,8 +20,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{ Cancellable, Props }
 import akka.stream.actor.{ ActorPublisher, ActorPublisherMessage }
-import play.api.libs.concurrent.Akka
-import play.api.Play.current
+import controllers.Application
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -34,7 +33,7 @@ class ContentPublisher(interval: Int) extends ActorPublisher[String] {
   }
 
   override def preStart(): Unit = {
-    implicit val dispatcher = Akka.system.dispatcher
+    implicit val dispatcher = Application.system.dispatcher
     schedule = Some(
       context.system.scheduler.schedule(delay, delay, Runnable(dispatchContent))
     )
@@ -46,9 +45,9 @@ class ContentPublisher(interval: Int) extends ActorPublisher[String] {
 
   private[this] def delay = FiniteDuration(interval, TimeUnit.SECONDS)
 
-  private[this] def retrieveContent: Seq[String] = ???
+  private[this] def retrieveContent: Seq[String] = Seq("a", "b", "c")
 }
 
 object ContentPublisher {
-  val ref = Akka.system.actorOf(Props(new ContentPublisher(100)))
+  val ref = Application.system.actorOf(Props(new ContentPublisher(10)))
 }
