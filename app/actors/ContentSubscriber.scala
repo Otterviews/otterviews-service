@@ -18,8 +18,8 @@ package actors
 
 import akka.actor.Props
 import akka.stream.actor.{ ActorSubscriber, ActorSubscriberMessage, WatermarkRequestStrategy }
-import controllers.Application
 import play.api.libs.iteratee.Enumerator
+import support.Global
 
 class ContentSubscriber(limit: Int) extends ActorSubscriber {
 
@@ -45,6 +45,6 @@ class ContentSubscriber(limit: Int) extends ActorSubscriber {
 }
 
 object ContentSubscriber {
-  val ref = Application.system.actorOf(Props(new ContentSubscriber(10)))
+  val ref = Global.system.actorOf(Props(new ContentSubscriber(10)))
 }
 

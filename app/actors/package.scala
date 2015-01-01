@@ -15,6 +15,7 @@
 // limitations under the License.
 
 import play.api.libs.iteratee.Enumerator
+import support.Global
 
 package object actors {
 
@@ -24,6 +25,10 @@ package object actors {
     def apply(execute: () => Unit): Runnable = new Runnable() {
       override def run(): Unit = execute()
     }
+  }
+
+  trait WithExecutionContext {
+    implicit val executionContext = Global.executionContext
   }
 
 }
