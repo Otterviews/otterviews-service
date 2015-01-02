@@ -9,9 +9,8 @@ scalaVersion := "2.11.4"
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-M2",
-  "com.typesafe.akka" %% "akka-http-experimental"   % "1.0-M2",
-  "com.firebase"      % "firebase-client-jvm"       % "2.0.3"
+  "com.typesafe.akka" %% "akka-actor"         % "2.3.8",
+  "com.firebase"      % "firebase-client-jvm" % "2.0.3"
 )
 
 scalariformSettings
