@@ -16,35 +16,36 @@
 
 package actors
 
-import akka.actor.Props
-import akka.stream.actor.{ ActorSubscriber, ActorSubscriberMessage, WatermarkRequestStrategy }
-import play.api.libs.iteratee.Enumerator
+import actors.firebase.ActorFirebaseMessages.AddedDataSnapshot
+import actors.firebase.SubscriberEventListener
+import akka.actor.{ Actor, ActorRef, Props }
+import com.firebase.client.{ DataSnapshot, Firebase }
+import models.Content
+import play.api.Logger
 import support.Global
 
-class ContentSubscriber(limit: Int) extends ActorSubscriber {
+class ContentSubscriber(out: ActorRef, firebase: Firebase) extends Actor {
 
-  var outs = Seq[Enumerator[String]]()
-  var cached = Seq[String]()
-
-  override val requestStrategy = WatermarkRequestStrategy(limit)
+  private[this] val eventListener = SubscriberEventListener(self)
 
   override def receive: Receive = {
-    case ActorSubscriberMessage.OnNext(message) => broadcastAndCache(message.toString)
-    case AddClient(e)                           => addAndFlush(e)
+    case AddedDataSnapshot(ds) => broadcast(ds)
+    case other                 => unhandled(other)
   }
 
-  private[this] def addAndFlush(e: Enumerator[String]) {
-    e >>> Enumerator(cached: _*)
-    outs ++= Seq(e)
-  }
+  override def preStart(): Unit = firebase.addChildEventListener(eventListener)
 
-  private[this] def broadcastAndCache(content: String) {
-    outs.foreach(_ >>> Enumerator(content))
-    cached ++= Seq(content)
+  override def postStop(): Unit = firebase.removeEventListener(eventListener)
+
+  private[this] def broadcast(content: DataSnapshot) {
+    Logger.info(Content.fromDataSnapshot(content).toJson)
+    out ! Content.fromDataSnapshot(content).toJson
   }
 }
 
 object ContentSubscriber {
-  val ref = Global.system.actorOf(Props(new ContentSubscriber(10)))
+  def props(out: ActorRef): Props = Props {
+    new ContentSubscriber(out, new Firebase(Global.config.getString("subscriber.uri")))
+  }
 }
 

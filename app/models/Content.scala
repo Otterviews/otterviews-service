@@ -14,21 +14,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import play.api.libs.iteratee.Enumerator
-import support.Global
+package models
 
-package object actors {
+import java.util.Date
 
-  case class AddClient(out: Enumerator[String])
+import com.firebase.client.DataSnapshot
+import play.api.libs.json.Json
 
-  object Runnable {
-    def apply(execute: () => Unit): Runnable = new Runnable() {
-      override def run(): Unit = execute()
-    }
-  }
+case class Content(title: String, content: String, date: Date) {
 
-  trait WithExecutionContext {
-    implicit val executionContext = Global.executionContext
-  }
+  def toJson: String = Json.obj(
+    "title" -> title,
+    "content" -> content,
+    "date" -> date.toString
+  ).toString()
 
 }
+
+object Content {
+  def fromDataSnapshot(dataSnapshot: DataSnapshot): Content =
+    Content(
+      dataSnapshot.child("title").getValue[String](classOf[String]),
+      dataSnapshot.child("content").getValue[String](classOf[String]),
+      new Date(dataSnapshot.child("date").getValue[String](classOf[String]))
+    )
+}
+

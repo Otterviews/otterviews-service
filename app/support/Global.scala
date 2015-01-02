@@ -16,25 +16,11 @@
 
 package support
 
-import actors.{ ContentPublisher, ContentSubscriber }
-import akka.actor.ActorSystem
-import akka.stream.actor.{ ActorPublisher, ActorSubscriber }
-import akka.stream.scaladsl.{ Flow, PublisherSource, SubscriberSink }
-import akka.stream.{ FlowMaterializer, MaterializerSettings }
-import com.typesafe.config.ConfigFactory
-import play.api.{ Application, GlobalSettings }
+import com.typesafe.config.{ Config, ConfigFactory }
+import play.api.GlobalSettings
 
 object Global extends GlobalSettings {
 
-  implicit val system = ActorSystem("global-system", ConfigFactory.load("global-system.conf"))
-  implicit val executionContext = system.dispatcher
-  implicit val materializer = FlowMaterializer(MaterializerSettings(system))
-
-  override def onStart(app: Application): Unit = {
-    Flow.empty[String].runWith(
-      PublisherSource(ActorPublisher[String](ContentPublisher.ref)),
-      SubscriberSink(ActorSubscriber[String](ContentSubscriber.ref))
-    )
-  }
+  val config: Config = ConfigFactory.load("subscriber.conf")
 
 }

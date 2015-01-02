@@ -16,19 +16,15 @@
 
 package controllers
 
-import actors.{ AddClient, ContentSubscriber }
-import play.api.libs.iteratee.{ Enumerator, _ }
+import actors.ContentSubscriber
+import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.mvc._
 
 object Application extends Controller {
 
-  def content: WebSocket[String, String] = WebSocket.using[String] { request =>
-    val out = Enumerator.empty[String]
-
-    ContentSubscriber.ref ! AddClient(out)
-
-    (Iteratee.ignore[String], out)
+  def content: WebSocket[String, String] = WebSocket.acceptWithActor[String, String] {
+    request => out => ContentSubscriber.props(out)
   }
 
   def health: Action[AnyContent] = Action {
