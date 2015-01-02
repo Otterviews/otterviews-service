@@ -16,12 +16,28 @@
 
 package controllers
 
-import actors.{ AddClient, ContentSubscriber }
+import actors._
+import models.Content
 import play.api.libs.iteratee.{ Enumerator, _ }
-import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.Controller
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.WebSocket
 
 object Application extends Controller {
+
+  implicit val contentReads = Json.reads[Content]
+
+  def posts: Action[JsValue] = Action(parse.json) { implicit request =>
+    ContentSubscriber.ref ! AddPost(request.body.as[Content])
+    Ok(Json.obj("status" -> "OK"))
+  }
+
+  def drafts: Action[JsValue] = Action(parse.json) { implicit request =>
+    ContentSubscriber.ref ! AddDraft(request.body.as[Content])
+    Ok(Json.obj("status" -> "OK"))
+  }
 
   def content: WebSocket[String, String] = WebSocket.using[String] { request =>
     val out = Enumerator.empty[String]

@@ -16,21 +16,21 @@
 
 package actors
 
-import akka.actor.Props
-import akka.stream.actor.{ ActorSubscriber, ActorSubscriberMessage, WatermarkRequestStrategy }
+import akka.actor.{ Actor, Props }
+import play.api.Play
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Enumerator
-import support.Global
 
-class ContentSubscriber(limit: Int) extends ActorSubscriber {
+class ContentSubscriber extends Actor {
 
   var outs = Seq[Enumerator[String]]()
   var cached = Seq[String]()
 
-  override val requestStrategy = WatermarkRequestStrategy(limit)
-
   override def receive: Receive = {
-    case ActorSubscriberMessage.OnNext(message) => broadcastAndCache(message.toString)
-    case AddClient(e)                           => addAndFlush(e)
+    case AddPost(content)  => broadcastAndCache(content.toJson)
+    case AddDraft(content) => broadcastAndCache(content.toJson)
+    case AddClient(e)      => addAndFlush(e)
+    case other             => unhandled(other)
   }
 
   private[this] def addAndFlush(e: Enumerator[String]) {
@@ -39,12 +39,14 @@ class ContentSubscriber(limit: Int) extends ActorSubscriber {
   }
 
   private[this] def broadcastAndCache(content: String) {
-    outs.foreach(_ >>> Enumerator(content))
-    cached ++= Seq(content)
+    if (!cached.contains(content)) {
+      outs.foreach(_ >>> Enumerator(content))
+      cached ++= Seq(content)
+    }
   }
 }
 
 object ContentSubscriber {
-  val ref = Global.system.actorOf(Props(new ContentSubscriber(10)))
+  val ref = Akka.system(Play.current).actorOf(Props(new ContentSubscriber()))
 }
 

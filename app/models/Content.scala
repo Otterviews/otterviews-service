@@ -14,13 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import models.Content
-import play.api.libs.iteratee.Enumerator
+package models
 
-package object actors {
+import java.util.Date
 
-  case class AddClient(out: Enumerator[String])
-  case class AddPost(content: Content)
-  case class AddDraft(content: Content)
+import play.api.libs.json.Json
+
+case class Content(title: String, content: String, date: Date) {
+
+  def toJson: String = Json.obj(
+    "title" -> title,
+    "content" -> content,
+    "date" -> date.toString
+  ).toString()
 
 }
+
