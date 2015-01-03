@@ -14,21 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers
+package models
 
-import actors.PostSubscriber
-import play.api.Play.current
-import play.api.libs.json.Json
-import play.api.mvc._
+import java.text.SimpleDateFormat
+import java.util.Date
 
-object Application extends Controller {
+import com.firebase.client.DataSnapshot
+import play.api.libs.json.{ JsObject, Json }
 
-  def content: WebSocket[String, String] = WebSocket.acceptWithActor[String, String] {
-    request => out => PostSubscriber.props(out)
-  }
+case class Post(title: String, content: String, date: Date) extends Model {
 
-  def health: Action[AnyContent] = Action {
-    Ok(Json.obj("status" -> "OK"))
-  }
+  def toJson: JsObject = Json.obj(
+    "title" -> title,
+    "content" -> content,
+    "date" -> date.toString
+  )
 
 }
+
+object Post {
+  def fromDataSnapshot(dataSnapshot: DataSnapshot): Post =
+    Post(
+      dataSnapshot.child("title").getValue[String](classOf[String]),
+      dataSnapshot.child("content").getValue[String](classOf[String]),
+      new SimpleDateFormat("yyyy-M-d").parse(dataSnapshot.child("date").getValue[String](classOf[String]))
+    )
+}
+

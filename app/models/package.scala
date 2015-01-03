@@ -14,29 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package models
+import play.api.libs.json.JsObject
 
-import java.util.Date
+package object models {
 
-import com.firebase.client.DataSnapshot
-import play.api.libs.json.Json
-
-case class Content(title: String, content: String, date: Date) {
-
-  def toJson: String = Json.obj(
-    "title" -> title,
-    "content" -> content,
-    "date" -> date.toString
-  ).toString()
+  trait Model {
+    def toJson: JsObject
+  }
 
 }
-
-object Content {
-  def fromDataSnapshot(dataSnapshot: DataSnapshot): Content =
-    Content(
-      dataSnapshot.child("title").getValue[String](classOf[String]),
-      dataSnapshot.child("content").getValue[String](classOf[String]),
-      new Date(dataSnapshot.child("date").getValue[String](classOf[String]))
-    )
-}
-

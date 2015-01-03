@@ -16,36 +16,36 @@
 
 package actors
 
-import actors.firebase.ActorFirebaseMessages.AddedDataSnapshot
 import actors.firebase.SubscriberEventListener
+import actors.messages.FirebaseMessages.FirebaseMessage
 import akka.actor.{ Actor, ActorRef, Props }
-import com.firebase.client.{ DataSnapshot, Firebase }
-import models.Content
-import play.api.Logger
+import com.firebase.client.Firebase
+import models.Post
 import support.Global
 
-class ContentSubscriber(out: ActorRef, firebase: Firebase) extends Actor {
+class PostSubscriber(out: ActorRef, firebase: Firebase) extends Actor {
 
   private[this] val eventListener = SubscriberEventListener(self)
 
   override def receive: Receive = {
-    case AddedDataSnapshot(ds) => broadcast(ds)
-    case other                 => unhandled(other)
+    case message: FirebaseMessage => broadcast(message)
+    case other                    => unhandled(other)
   }
 
   override def preStart(): Unit = firebase.addChildEventListener(eventListener)
 
   override def postStop(): Unit = firebase.removeEventListener(eventListener)
 
-  private[this] def broadcast(content: DataSnapshot) {
-    Logger.info(Content.fromDataSnapshot(content).toJson)
-    out ! Content.fromDataSnapshot(content).toJson
-  }
+  private[this] def broadcast(firebase: FirebaseMessage) =
+    out ! firebase.asViewMessage[Post] {
+      Post.fromDataSnapshot(firebase.dataSnapshot)
+    }.toJson
+
 }
 
-object ContentSubscriber {
+object PostSubscriber {
   def props(out: ActorRef): Props = Props {
-    new ContentSubscriber(out, new Firebase(Global.config.getString("subscriber.uri")))
+    new PostSubscriber(out, new Firebase(Global.config.getString("subscriber.uri")))
   }
 }
 

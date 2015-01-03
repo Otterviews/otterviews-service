@@ -14,21 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers
+package actors.messages
 
-import actors.PostSubscriber
-import play.api.Play.current
+import models.Model
 import play.api.libs.json.Json
-import play.api.mvc._
 
-object Application extends Controller {
+object ViewMessages {
 
-  def content: WebSocket[String, String] = WebSocket.acceptWithActor[String, String] {
-    request => out => PostSubscriber.props(out)
+  sealed case class ViewMessage[T <: Model](m: T) {
+
+    def toJson: String =
+      (m.toJson ++ Json.obj(
+        "model" -> classOf[T].getSimpleName.toLowerCase,
+        "event" -> getClass.getSimpleName.toLowerCase
+      )).toString()
   }
 
-  def health: Action[AnyContent] = Action {
-    Ok(Json.obj("status" -> "OK"))
-  }
+  case class Added[T <: Model](model: T) extends ViewMessage[T](model)
+
+  case class Removed[T <: Model](model: T) extends ViewMessage[T](model)
+
+  case class Changed[T <: Model](model: T) extends ViewMessage[T](model)
 
 }
