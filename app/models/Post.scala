@@ -22,9 +22,10 @@ import java.util.Date
 import com.firebase.client.DataSnapshot
 import play.api.libs.json.{ JsObject, Json }
 
-case class Post(title: String, content: String, date: Date) extends Model {
+case class Post(key: String, title: String, content: String, date: Date) extends Model {
 
   def toJson: JsObject = Json.obj(
+    "key" -> key,
     "title" -> title,
     "content" -> content,
     "date" -> date.toString
@@ -35,6 +36,7 @@ case class Post(title: String, content: String, date: Date) extends Model {
 object Post {
   def fromDataSnapshot(dataSnapshot: DataSnapshot): Post =
     Post(
+      dataSnapshot.getKey,
       dataSnapshot.child("title").getValue[String](classOf[String]),
       dataSnapshot.child("content").getValue[String](classOf[String]),
       new SimpleDateFormat("yyyy-M-d").parse(dataSnapshot.child("date").getValue[String](classOf[String]))
