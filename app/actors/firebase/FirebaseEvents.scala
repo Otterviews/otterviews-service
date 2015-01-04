@@ -22,13 +22,16 @@ import play.api.libs.json.Json
 
 object FirebaseEvents {
 
-  abstract sealed case class FirebaseEvent(dataSnapshot: DataSnapshot) {
+  abstract sealed class FirebaseEvent(dataSnapshot: DataSnapshot) {
 
-    def toJson[T <: Model](toModel: (DataSnapshot) => T): String =
-      (toModel(dataSnapshot).toJson ++ Json.obj(
-        "model" -> classOf[T].getSimpleName.toLowerCase,
+    def toJson[T <: Model](toModel: (DataSnapshot) => T): String = {
+      val model: T = toModel(dataSnapshot)
+      (model.toJson ++ Json.obj(
+        "model" -> model.getClass.getSimpleName.toLowerCase,
         "event" -> getClass.getSimpleName.toLowerCase
       )).toString()
+    }
+
   }
 
   case class Added(ds: DataSnapshot) extends FirebaseEvent(ds)
