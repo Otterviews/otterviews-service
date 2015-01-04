@@ -16,8 +16,8 @@
 
 package actors
 
-import actors.firebase.SubscriberEventListener
-import actors.messages.FirebaseMessages.FirebaseMessage
+import actors.firebase.{ FirebaseEvents, SubscriberEventListener }
+import FirebaseEvents.FirebaseEvent
 import akka.actor.{ Actor, ActorRef, Props }
 import com.firebase.client.Firebase
 import models.Post
@@ -28,18 +28,16 @@ class PostSubscriber(out: ActorRef, firebase: Firebase) extends Actor {
   private[this] val eventListener = SubscriberEventListener(self)
 
   override def receive: Receive = {
-    case message: FirebaseMessage => broadcast(message)
-    case other                    => unhandled(other)
+    case event: FirebaseEvent => broadcast(event)
+    case other                => unhandled(other)
   }
 
   override def preStart(): Unit = firebase.addChildEventListener(eventListener)
 
   override def postStop(): Unit = firebase.removeEventListener(eventListener)
 
-  private[this] def broadcast(firebase: FirebaseMessage) =
-    out ! firebase.asViewMessage[Post] {
-      Post.fromDataSnapshot(firebase.dataSnapshot)
-    }.toJson
+  private[this] def broadcast(event: FirebaseEvent) =
+    out ! event.toJson[Post](Post.fromDataSnapshot)
 
 }
 

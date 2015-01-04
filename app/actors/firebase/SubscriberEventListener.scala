@@ -16,7 +16,7 @@
 
 package actors.firebase
 
-import actors.messages.FirebaseMessages.{ ChangedDataSnapshot, AddedDataSnapshot, RemovedDataSnapshot }
+import FirebaseEvents.{ Changed, Added, Removed }
 import akka.actor.ActorRef
 import com.firebase.client.{ FirebaseError, DataSnapshot, ChildEventListener }
 
@@ -24,13 +24,13 @@ object SubscriberEventListener {
   def apply(actor: ActorRef): ChildEventListener = {
     new ChildEventListener {
       override def onChildRemoved(dataSnapshot: DataSnapshot): Unit =
-        actor ! RemovedDataSnapshot(dataSnapshot)
+        actor ! Removed(dataSnapshot)
 
       override def onChildAdded(dataSnapshot: DataSnapshot, s: String): Unit =
-        actor ! AddedDataSnapshot(dataSnapshot)
+        actor ! Added(dataSnapshot)
 
       override def onChildChanged(dataSnapshot: DataSnapshot, s: String): Unit =
-        actor ! ChangedDataSnapshot(dataSnapshot)
+        actor ! Changed(dataSnapshot)
 
       override def onChildMoved(dataSnapshot: DataSnapshot, s: String): Unit = {}
 

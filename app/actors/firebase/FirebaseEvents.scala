@@ -14,28 +14,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package actors.messages
+package actors.firebase
 
-import actors.messages.ViewMessages.{ Added, Changed, Removed, ViewMessage }
 import com.firebase.client.DataSnapshot
 import models.Model
+import play.api.libs.json.Json
 
-object FirebaseMessages {
+object FirebaseEvents {
 
-  abstract sealed case class FirebaseMessage(dataSnapshot: DataSnapshot) {
-    def asViewMessage[T <: Model](model: T): ViewMessage[T]
+  abstract sealed case class FirebaseEvent(dataSnapshot: DataSnapshot) {
+
+    def toJson[T <: Model](toModel: (DataSnapshot) => T): String =
+      (toModel(dataSnapshot).toJson ++ Json.obj(
+        "model" -> classOf[T].getSimpleName.toLowerCase,
+        "event" -> getClass.getSimpleName.toLowerCase
+      )).toString()
   }
 
-  case class AddedDataSnapshot(ds: DataSnapshot) extends FirebaseMessage(ds) {
-    override def asViewMessage[T <: Model](model: T): ViewMessage[T] = Added(model)
-  }
+  case class Added(ds: DataSnapshot) extends FirebaseEvent(ds)
 
-  case class RemovedDataSnapshot(ds: DataSnapshot) extends FirebaseMessage(ds) {
-    override def asViewMessage[T <: Model](model: T): ViewMessage[T] = Removed(model)
-  }
+  case class Removed(ds: DataSnapshot) extends FirebaseEvent(ds)
 
-  case class ChangedDataSnapshot(ds: DataSnapshot) extends FirebaseMessage(ds) {
-    override def asViewMessage[T <: Model](model: T): ViewMessage[T] = Changed(model)
-  }
+  case class Changed(ds: DataSnapshot) extends FirebaseEvent(ds)
 
 }
